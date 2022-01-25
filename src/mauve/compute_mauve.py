@@ -30,6 +30,7 @@ if FOUND_TORCH and FOUND_TRANSFORMERS:
 
 MODEL, TOKENIZER, MODEL_NAME = None, None, None
 
+
 def compute_mauve(
         p_features=None, q_features=None,
         p_tokens=None, q_tokens=None,
@@ -128,6 +129,7 @@ def compute_mauve(
     )
     return to_return
 
+
 def get_features_from_input(features, tokenized_texts, texts,
                             featurize_model_name, max_len, device_id, name, batch_size,
                             is_mean=False, verbose=False, use_float64=False):
@@ -154,7 +156,8 @@ def get_features_from_input(features, tokenized_texts, texts,
                 TOKENIZER = get_tokenizer(featurize_model_name)
             if verbose: print('Tokenizing text...')
             tokenized_texts = [
-                TOKENIZER.encode(sen, return_tensors='pt', truncation=True, max_length=max_len)
+                TOKENIZER.encode(sen if sen != '' else TOKENIZER.bos_token, return_tensors='pt',
+                                 truncation=True, max_length=max_len)
                 for sen in texts
             ]
         # use tokenized_texts to featurize
