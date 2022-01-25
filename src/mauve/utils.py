@@ -84,7 +84,7 @@ def decode_samples_from_lst(tokenizer, tokenized_texts):
     return output
 
 @torch.no_grad()
-def featurize_tokens_from_model(model, tokenized_texts, name="", verbose=False):
+def featurize_tokens_from_model(model, tokenized_texts, name="", is_mean=False, verbose=False):
     """Featurize tokenized texts using models
 
     :param model: HF Transformers model
@@ -102,7 +102,10 @@ def featurize_tokens_from_model(model, tokenized_texts, name="", verbose=False):
         outs = model(input_ids=sen, past_key_values=None,
                      output_hidden_states=True, return_dict=True)
         h = outs.hidden_states[-1]  # (batch_size, seq_len, dim)
-        feats.append(h[:, -1, :].cpu())
+        if is_mean:
+            feats.append(h.mean(1).cpu())
+        else:
+            feats.append(h[:, -1, :].cpu())
     t2 = time.time()
     if verbose: print(f'Featurize time: {round(t2-t1, 2)}')
     return torch.cat(feats)
