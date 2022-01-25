@@ -100,13 +100,10 @@ def compute_mauve(
 
     # Acutal binning
     t1 = time.time()
-    p, q = cluster_feats(p_features, q_features,
-                         num_clusters=num_buckets,
-                         norm='l2', whiten=False,
-                         pca_max_data=pca_max_data,
+    p, q = cluster_feats(p_features, q_features, num_clusters=num_buckets,
+                         norm='l2', whiten=False, pca_max_data=pca_max_data,
                          explained_variance=kmeans_explained_var,
-                         num_redo=kmeans_num_redo,
-                         max_iter=kmeans_max_iter,
+                         num_redo=kmeans_num_redo, max_iter=kmeans_max_iter,
                          seed=seed, verbose=verbose)
     t2 = time.time()
     if verbose:
@@ -124,7 +121,7 @@ def compute_mauve(
     )
     fi_score = get_fronter_integral(p, q)
     to_return = SimpleNamespace(
-        p_hist=p, q_hist=q, divergence_curve=divergence_curve, 
+        p_hist=p, q_hist=q, divergence_curve=divergence_curve,
         mauve=mauve_score,
         frontier_integral=fi_score,
         num_buckets=num_buckets,
@@ -140,13 +137,13 @@ def get_features_from_input(features, tokenized_texts, texts,
         if not FOUND_TORCH:
             raise ModuleNotFoundError(
                 """PyTorch not found. Please install PyTorch if you would like to use the featurization.
-                    For details, see `https://github.com/krishnap25/mauve` 
+                    For details, see `https://github.com/krishnap25/mauve`
                     and `https://pytorch.org/get-started/locally/`.
                 """)
         if not FOUND_TRANSFORMERS:
             raise ModuleNotFoundError(
                 """Transformers not found. Please install Transformers if you would like to use the featurization.
-                    For details, see `https://github.com/krishnap25/mauve` 
+                    For details, see `https://github.com/krishnap25/mauve`
                     and `https://huggingface.co/transformers/installation.html`.
                 """)
 
@@ -178,12 +175,35 @@ def get_features_from_input(features, tokenized_texts, texts,
         features = np.asarray(features)
     return features
 
+
 def cluster_feats(p, q, num_clusters,
                   norm='none', whiten=True,
                   pca_max_data=-1,
                   explained_variance=0.9,
                   num_redo=5, max_iter=500,
                   seed=0, verbose=False):
+    p_labels, q_labels = get_kmeans_clusters_from_feats(
+        p, q, num_clusters, norm='none', whiten=True,
+        pca_max_data=-1, explained_variance=0.9, num_redo=5,
+        max_iter=500, seed=0, verbose=False)
+    return get_cluster_probabilities(p_labels, q_labels, num_clusters)
+
+
+def get_cluster_probabilities(p_labels, q_labels, num_clusters):
+
+    q_bins = np.histogram(q_labels, bins=num_clusters,
+                           range=[0, num_clusters], density=True)[0]
+    p_bins = np.histogram(p_labels, bins=num_clusters,
+                          range=[0, num_clusters], density=True)[0]
+    return p_bins / p_bins.sum(), q_bins / q_bins.sum()
+
+
+def get_kmeans_clusters_from_feats(p, q, num_clusters,
+                                   norm='none', whiten=True,
+                                   pca_max_data=-1,
+                                   explained_variance=0.9,
+                                   num_redo=5, max_iter=500,
+                                   seed=0, verbose=False):
     assert 0 < explained_variance < 1
     if verbose:
         print(f'seed = {seed}')
@@ -221,11 +241,7 @@ def cluster_feats(p, q, num_clusters,
     q_labels = labels[:len(q)]
     p_labels = labels[len(q):]
 
-    q_bins = np.histogram(q_labels, bins=num_clusters,
-                           range=[0, num_clusters], density=True)[0]
-    p_bins = np.histogram(p_labels, bins=num_clusters,
-                          range=[0, num_clusters], density=True)[0]
-    return p_bins / p_bins.sum(), q_bins / q_bins.sum()
+    return p_labels, q_labels
 
 
 def kl_multinomial(p, q):
