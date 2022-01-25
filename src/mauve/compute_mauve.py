@@ -182,7 +182,7 @@ def cluster_feats(p, q, num_clusters,
                   explained_variance=0.9,
                   num_redo=5, max_iter=500,
                   seed=0, verbose=False):
-    p_labels, q_labels = get_kmeans_clusters_from_feats(
+    p_labels, q_labels, _ = get_kmeans_clusters_from_feats(
         p, q, num_clusters, norm='none', whiten=True,
         pca_max_data=-1, explained_variance=0.9, num_redo=5,
         max_iter=500, seed=0, verbose=False)
@@ -240,8 +240,13 @@ def get_kmeans_clusters_from_feats(p, q, num_clusters,
 
     q_labels = labels[:len(q)]
     p_labels = labels[len(q):]
+    clustering_model = {
+        'pca': pca,
+        'dimensionality': idx + 1,
+        'kmeans': kmeans
+    }
 
-    return p_labels, q_labels
+    return p_labels, q_labels, clustering_model
 
 
 def kl_multinomial(p, q):
