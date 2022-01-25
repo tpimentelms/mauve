@@ -36,7 +36,7 @@ def compute_mauve(
         p_text=None, q_text=None,
         num_buckets='auto', pca_max_data=-1, kmeans_explained_var=0.9,
         kmeans_num_redo=5, kmeans_max_iter=500,
-        featurize_model_name='gpt2-large', device_id=-1, max_text_length=1024,
+        featurize_model_name='gpt2-large', is_mean=False, device_id=-1, max_text_length=1024,
         divergence_curve_discretization_size=25, mauve_scaling_factor=5,
         verbose=False, seed=25, batch_size=1, use_float64=False,
 ):
@@ -86,11 +86,11 @@ def compute_mauve(
         raise ValueError('Supply at least one of q_features, q_tokens, q_text')
     p_features = get_features_from_input(
         p_features, p_tokens, p_text, featurize_model_name, max_text_length,
-        device_id, name="p", verbose=verbose, batch_size=batch_size, use_float64=use_float64,
+        device_id, name="p", is_mean=is_mean, verbose=verbose, batch_size=batch_size, use_float64=use_float64,
     )
     q_features = get_features_from_input(
         q_features, q_tokens, q_text, featurize_model_name, max_text_length,
-        device_id, name="q", verbose=verbose, batch_size=batch_size, use_float64=use_float64,
+        device_id, name="q", is_mean=is_mean, verbose=verbose, batch_size=batch_size, use_float64=use_float64,
     )
     if num_buckets == 'auto':
         # heuristic: use num_clusters = num_generations / 10
@@ -133,7 +133,7 @@ def compute_mauve(
 
 def get_features_from_input(features, tokenized_texts, texts,
                             featurize_model_name, max_len, device_id, name, batch_size,
-                            verbose=False, use_float64=False):
+                            is_mean=False, verbose=False, use_float64=False):
     global MODEL, TOKENIZER, MODEL_NAME
     if features is None:
         # Featurizing is necessary. Make sure the required packages are available
@@ -173,7 +173,7 @@ def get_features_from_input(features, tokenized_texts, texts,
         if use_float64:
             MODEL = MODEL.double()
         if verbose: print('Featurizing tokens')
-        features = featurize_tokens_from_model(MODEL, tokenized_texts, batch_size, name).detach().cpu().numpy()
+        features = featurize_tokens_from_model(MODEL, tokenized_texts, batch_size, name, is_mean=is_mean).detach().cpu().numpy()
     else:
         features = np.asarray(features)
     return features

@@ -84,8 +84,9 @@ def decode_samples_from_lst(tokenizer, tokenized_texts):
     return output
 
 @torch.no_grad()
-def featurize_tokens_from_model(model, tokenized_texts, batch_size, name="", verbose=False):
+def featurize_tokens_from_model(model, tokenized_texts, batch_size, name="", is_mean=False, verbose=False):
     """Featurize tokenized texts using models, support batchify
+
     :param model: HF Transformers model
     :param batch_size: Batch size used during forward pass
     :param tokenized_texts: list of torch.LongTensor of shape (1, length)
@@ -94,6 +95,7 @@ def featurize_tokens_from_model(model, tokenized_texts, batch_size, name="", ver
     """
     device = next(model.parameters()).device
     t1 = time.time()
+
     feats, chunks, chunk_sent_lengths = [], [], []
     chunk_idx = 0
 
@@ -118,9 +120,14 @@ def featurize_tokens_from_model(model, tokenized_texts, batch_size, name="", ver
                      return_dict=True)
         h = []
         for hidden_state, sent_length in zip(outs.hidden_states[-1], chunk_sent_length):
-            h.append(hidden_state[sent_length - 1])
+            if is_mean:
+                import ipdb; ipdb.set_trace()
+                h.append(hidden_state.mean())
+            else:
+                h.append(hidden_state[sent_length - 1])
         h = torch.stack(h, dim=0)
         feats.append(h.cpu())
+
     t2 = time.time()
     if verbose:
         print(f'Featurize time: {round(t2-t1, 2)}')
