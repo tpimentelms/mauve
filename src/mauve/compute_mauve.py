@@ -5,6 +5,7 @@ import math
 import numpy as np
 import time
 from types import SimpleNamespace
+from tqdm import tqdm
 
 import faiss
 from sklearn.preprocessing import normalize
@@ -154,11 +155,11 @@ def get_features_from_input(features, tokenized_texts, texts,
             if TOKENIZER is None or MODEL_NAME != featurize_model_name:
                 if verbose: print('Loading tokenizer')
                 TOKENIZER = get_tokenizer(featurize_model_name)
-            if verbose: print('Tokenizing text...')
+            text_looper = tqdm(texts, desc='Tokenizing text') if verbose else texts
             tokenized_texts = [
                 TOKENIZER.encode(sen if sen != '' else TOKENIZER.bos_token, return_tensors='pt',
                                  truncation=True, max_length=max_len)
-                for sen in texts
+                for sen in text_looper
             ]
         # use tokenized_texts to featurize
         if TOKENIZER is None or MODEL_NAME != featurize_model_name:
