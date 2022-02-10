@@ -107,31 +107,6 @@ def featurize_tokens_from_model(model, tokenized_texts, batch_size, name="", is_
 
     with tqdm(total=len(tokenized_texts), desc=f"Featurizing {name}") as pbar:
         for batch, batch_sent_length in zip(chunks, chunk_sent_lengths):
-            # real_batch_size = len(chunk)
-
-            # padded_chunk = torch.nn.utils.rnn.pad_sequence(
-            #     chunk, batch_first=True, padding_value=-1).to(device)
-
-            # attention_mask = (padded_chunk != -1)
-            # input_ids = padded_chunk.copy()
-            # input_ids[~attention_mask] = 0
-
-            # attention_mask = torch.nn.utils.rnn.pad_sequence(
-            #     [torch.ones(sent_length).long() for sent_length in chunk_sent_length],
-            #     batch_first=True, padding_value=0).to(device)
-            # outs = model(input_ids=padded_chunk, attention_mask=attention_mask,
-            #              past_key_values=None, output_hidden_states=True,
-            #              return_dict=True)
-            # h = []
-            # for hidden_state, sent_length in zip(outs.hidden_states[-1], chunk_sent_length):
-            #     if is_mean:
-            #         h.append(hidden_state[:sent_length].mean(0))
-            #     else:
-            #         h.append(hidden_state[sent_length - 1])
-            # h = torch.stack(h, dim=0)
-            # h = torch.gather(hidden_state, 1, attention_mask.sum(-1).unsqueeze(-1))
-            # import ipdb; ipdb.set_trace()
-
             h = featurize_batch(model, batch, batch_sent_length, device, is_mean=is_mean)
 
             feats.append(h.cpu())
@@ -144,29 +119,16 @@ def featurize_tokens_from_model(model, tokenized_texts, batch_size, name="", is_
 
 
 def featurize_batch(model, batch, batch_sent_lengths, device, is_mean=False):
-
     padded_batch = torch.nn.utils.rnn.pad_sequence(
-        batch, batch_first=True, padding_value=-1).to(device)
+        batch, batch_first=True, padding_value=0).to(device)
+    attention_mask = torch.nn.utils.rnn.pad_sequence(
+        [torch.ones(sent_length).long() for sent_length in batch_sent_lengths],
+        batch_first=True, padding_value=0).to(device)
 
-    attention_mask = (padded_batch != -1)
-    input_ids = padded_batch.clone()
-    input_ids[~attention_mask] = 0
-
-    # attention_mask = torch.nn.utils.rnn.pad_sequence(
-    #     [torch.ones(sent_length).long() for sent_length in chunk_sent_length],
-    #     batch_first=True, padding_value=0).to(device)
-    outs = model(input_ids=input_ids, attention_mask=attention_mask,
+    outs = model(input_ids=padded_batch, attention_mask=attention_mask,
                  past_key_values=None, output_hidden_states=True,
                  return_dict=True)
     hidden_states = outs.hidden_states[-1]
-
-    # h = []
-    # for hidden_state, sent_length in zip(outs.hidden_states[-1], batch_sent_lengths):
-    #     if is_mean:
-    #         h.append(hidden_state[:sent_length].mean(0))
-    #     else:
-    #         h.append(hidden_state[sent_length - 1])
-    # h2 = torch.stack(h, dim=0)
 
     if is_mean:
         hidden_states = hidden_states * attention_mask.unsqueeze(-1)
@@ -175,11 +137,5 @@ def featurize_batch(model, batch, batch_sent_lengths, device, is_mean=False):
         _, _, hidden_size = hidden_states.size()
         gather_mask = (attention_mask.sum(-1) - 1).reshape(-1, 1, 1).repeat(1, 1, hidden_size)
         h = torch.gather(hidden_states, 1, gather_mask).squeeze(1)
-    # import ipdb; ipdb.set_trace()
-
-    # assert (torch.abs(h2 - h) < 1e-4).all()
-    # assert (h2 == h).all()
 
     return h
-    # feats.append(h.cpu())
-    # pbar.update(h.shape[0])
