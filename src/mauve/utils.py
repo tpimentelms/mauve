@@ -22,6 +22,7 @@ def get_device_from_arg(device_id):
     else:
         return CPU_DEVICE
 
+
 def get_model(model_name, tokenizer, device_id):
     device = get_device_from_arg(device_id)
     if 'gpt2' in model_name:
@@ -31,12 +32,14 @@ def get_model(model_name, tokenizer, device_id):
         raise ValueError(f'Unknown model: {model_name}')
     return model
 
+
 def get_tokenizer(model_name='gpt2'):
     if 'gpt2' in model_name:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
     else:
         raise ValueError(f'Unknown model: {model_name}')
     return tokenizer
+
 
 def load_json_dataset(data_path, max_num_data):
     texts = []
@@ -45,6 +48,7 @@ def load_json_dataset(data_path, max_num_data):
             break
         texts.append(json.loads(line)['text'])
     return texts
+
 
 def load_and_tokenize_json_data(tokenizer, data_path, max_len=1024, max_num_data=float('inf')):
     """ Load and tokenize the data in a jsonl format
@@ -67,6 +71,7 @@ def load_and_tokenize_json_data(tokenizer, data_path, max_len=1024, max_num_data
     print(f'tokenizing time: {round(t2-t1, 2)} sec')
     return tokenized_texts
 
+
 def decode_samples_from_lst(tokenizer, tokenized_texts):
     """ Decode from tokens to string
 
@@ -82,6 +87,7 @@ def decode_samples_from_lst(tokenizer, tokenized_texts):
     t2 = time.time()
     print(f'de-tokenizing time: {round(t2-t1, 2)}')
     return output
+
 
 @torch.no_grad()
 def featurize_tokens_from_model(model, tokenized_texts, batch_size, name="", is_mean=False, verbose=False):
