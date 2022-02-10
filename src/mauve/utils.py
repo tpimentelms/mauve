@@ -121,8 +121,7 @@ def featurize_tokens_from_model(model, tokenized_texts, batch_size, name="", is_
         h = []
         for hidden_state, sent_length in zip(outs.hidden_states[-1], chunk_sent_length):
             if is_mean:
-                import ipdb; ipdb.set_trace()
-                h.append(hidden_state.mean())
+                h.append(hidden_state[:sent_length].mean(0))
             else:
                 h.append(hidden_state[sent_length - 1])
         h = torch.stack(h, dim=0)
