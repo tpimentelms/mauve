@@ -187,9 +187,9 @@ def cluster_feats(p, q, num_clusters,
                   num_redo=5, max_iter=500,
                   seed=0, verbose=False):
     p_labels, q_labels, _ = get_kmeans_clusters_from_feats(
-        p, q, num_clusters, norm='none', whiten=True,
-        pca_max_data=-1, explained_variance=0.9, num_redo=5,
-        max_iter=500, seed=0, verbose=False)
+        p, q, num_clusters, norm=norm, whiten=whiten,
+        pca_max_data=pca_max_data, explained_variance=explained_variance, num_redo=num_redo,
+        max_iter=max_iter, seed=seed, verbose=verbose)
     return get_cluster_probabilities(p_labels, q_labels, num_clusters)
 
 
